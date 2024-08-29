@@ -1,0 +1,38 @@
+name: Terraform Deployment to GCP - Dev
+
+on:
+  push:
+    branches:
+      - main  # Deploy on pushes to the 'main' branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0 # Specify desired Terraform version
+
+      - name: Terraform Init
+        run: terraform init -input=false
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=plan.out
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve plan.out
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Output Variables (Optional)
+        run: |
+          terraform output -json > output.json
+          echo "::set-output name=output_json::$(cat output.json)" # Make output available to other workflows
